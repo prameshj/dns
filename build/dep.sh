@@ -221,7 +221,7 @@ _fixPermissions() {
 
 _checkImage() {
   if [ -z $(docker images k8s-dns-godep -q) ]; then
-    echo "Must run `dep.sh image` to first to create godep image"
+    echo "Must run 'dep.sh image' to first to create godep image"
     exit 1
   fi
 }

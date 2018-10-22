@@ -10,11 +10,6 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "bitbucket.org/ww/goautoneg",
-			"Comment": "null-5",
-			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
-		},
-		{
 			"ImportPath": "github.com/PuerkitoBio/purell",
 			"Comment": "v1.1.0",
 			"Rev": "0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4"
@@ -46,6 +41,11 @@
 			"ImportPath": "github.com/coreos/etcd/pkg/types",
 			"Comment": "v3.1.0-rc.1-217-g61064a7be",
 			"Rev": "61064a7be383053811e1535829a7b500feb7ef8f"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-semver/semver",
+			"Comment": "v0.2.0-9-ge214231",
+			"Rev": "e214231b295a8ea9479f11b70b35d5acf3556d9b"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/activation",
@@ -101,6 +101,11 @@
 		{
 			"ImportPath": "github.com/go-openapi/swag",
 			"Rev": "96d7b9ebd181a1735a1c9ac87914f2b32fbf56c9"
+		},
+		{
+			"ImportPath": "github.com/godbus/dbus",
+			"Comment": "v4.1.0-18-g92e4375",
+			"Rev": "92e4375bf33da0705e7ff36bc1648197fd4971bc"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
@@ -1463,7 +1468,17 @@
 			"Rev": "326cf6c2d0e2d72b82e5014710f1b0cf1bacf3b4"
 		},
 		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/dbus",
+			"Comment": "v1.5.2-beta.0-49-g326cf6c2d0",
+			"Rev": "326cf6c2d0e2d72b82e5014710f1b0cf1bacf3b4"
+		},
+		{
 			"ImportPath": "k8s.io/kubernetes/pkg/util/errors",
+			"Comment": "v1.5.2-beta.0-49-g326cf6c2d0",
+			"Rev": "326cf6c2d0e2d72b82e5014710f1b0cf1bacf3b4"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/exec",
 			"Comment": "v1.5.2-beta.0-49-g326cf6c2d0",
 			"Rev": "326cf6c2d0e2d72b82e5014710f1b0cf1bacf3b4"
 		},
@@ -1474,6 +1489,11 @@
 		},
 		{
 			"ImportPath": "k8s.io/kubernetes/pkg/util/intstr",
+			"Comment": "v1.5.2-beta.0-49-g326cf6c2d0",
+			"Rev": "326cf6c2d0e2d72b82e5014710f1b0cf1bacf3b4"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/iptables",
 			"Comment": "v1.5.2-beta.0-49-g326cf6c2d0",
 			"Rev": "326cf6c2d0e2d72b82e5014710f1b0cf1bacf3b4"
 		},
