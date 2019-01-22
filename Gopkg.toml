@@ -30,6 +30,10 @@
   version = "v3.1.0-rc.1-217-g61064a7be"
 
 [[constraint]]
+  name = "github.com/vishvananda/netlink"
+  revision = "f67b75edbf5e3bb7dfe70bb788610693a71be3d1"
+
+[[constraint]]
   branch = "master"
   name = "github.com/golang/glog"
 
