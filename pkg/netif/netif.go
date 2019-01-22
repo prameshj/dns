@@ -2,8 +2,9 @@ package netif
 
 import (
 	"fmt"
-	"github.com/vishvananda/netlink"
 	"net"
+
+	"github.com/vishvananda/netlink"
 )
 
 type NetifManager struct {
@@ -44,7 +45,27 @@ func (m *NetifManager) AddDummyDevice(name string) error {
 		return err
 	}
 	l, _ := m.LinkByName(name)
-	return m.AddrAdd(l, m.Addr)
+	err = m.AddrAdd(l, m.Addr)
+	if err != nil {
+		return err
+	}
+	list, err2 := m.AddrList(l, 2)
+	if err2 != nil {
+		return fmt.Errorf("Failed to list addresses - %s", err2)
+	}
+	for len(list) == 0 {
+		fmt.Println("NO IP YET")
+		err = m.AddrAdd(l, m.Addr)
+		if err != nil {
+			return err
+		}
+		list, err2 = m.AddrList(l, 2)
+		if err2 != nil {
+			return fmt.Errorf("Failed to list addresses - %s", err2)
+		}
+	}
+	fmt.Println(list)
+	return nil
 }
 
 // RemoveDummyDevice deletes the dummy device with the given name.
