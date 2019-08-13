@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
+	v1 "k8s.io/client-go/pkg/api/v1"
 	kcache "k8s.io/client-go/tools/cache"
 
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -226,6 +226,7 @@ func (kd *KubeDNS) waitForResourceSyncedOrDie() {
 }
 
 func (kd *KubeDNS) startConfigMapSync() {
+	config.StartConfigMapSync(&kd.configSync, kd.updateConfig, kd.syncConfigMap)
 	initialConfig, err := kd.configSync.Once()
 	if err != nil {
 		glog.Errorf(

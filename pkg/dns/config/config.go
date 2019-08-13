@@ -20,9 +20,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/golang/glog"
 	types "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	fed "k8s.io/dns/pkg/dns/federation"
 	"k8s.io/dns/pkg/dns/util"
 )
@@ -123,5 +127,87 @@ func (config *Config) validateUpstreamNameserver() error {
 			return err
 		}
 	}
+	return nil
+}
+
+// Config contains a configmap name, a config directory and interval of how often to poll config.
+
+type DNSConfig struct {
+	ClusterDomain      string
+	KubeConfigFile     string
+	KubeMasterURL      string
+	InitialSyncTimeout time.Duration
+
+	HealthzPort    int
+	DNSBindAddress string
+	DNSPort        int
+
+	Federations map[string]string
+
+	ConfigMapNs string
+	ConfigMap   string
+
+	ConfigDir    string
+	ConfigPeriod time.Duration
+
+	NameServers string
+}
+
+func NewDNSConfig() *DNSConfig {
+	return &DNSConfig{
+		ClusterDomain:      "cluster.local.",
+		HealthzPort:        8081,
+		DNSBindAddress:     "0.0.0.0",
+		DNSPort:            53,
+		InitialSyncTimeout: 60 * time.Second,
+
+		Federations: make(map[string]string),
+
+		ConfigMapNs: api.NamespaceSystem,
+		ConfigMap:   "", // default to using command line flags
+
+		ConfigPeriod: 10 * time.Second,
+		ConfigDir:    "",
+		NameServers:  "",
+	}
+}
+
+func NewConfigSync(kubeClient kubernetes.Interface, config *DNSConfig) Sync {
+
+	var configSync Sync
+	switch {
+	case config.ConfigMap != "" && config.ConfigDir != "":
+		glog.Fatal("Cannot use both ConfigMap and ConfigDir")
+
+	case config.ConfigMap != "":
+		glog.V(0).Infof("Using configuration read from ConfigMap: %v:%v", config.ConfigMapNs, config.ConfigMap)
+		configSync = NewConfigMapSync(kubeClient, config.ConfigMapNs, config.ConfigMap)
+
+	case config.ConfigDir != "":
+		glog.V(0).Infof("Using configuration read from directory: %v with period %v", config.ConfigDir, config.ConfigPeriod)
+		configSync = NewFileSync(config.ConfigDir, config.ConfigPeriod)
+
+	default:
+		glog.V(0).Infof("ConfigMap and ConfigDir not configured, using values from command line flags")
+		conf := Config{Federations: config.Federations}
+		if len(config.NameServers) > 0 {
+			conf.UpstreamNameservers = strings.Split(config.NameServers, ",")
+		}
+		configSync = NewNopSync(&conf)
+	}
+	return configSync
+}
+
+func StartConfigMapSync(configSync *Sync, updateFunc func(*Config), periodicSync func(<-chan *Config)) error {
+	if configSync == nil {
+		return fmt.Errorf("Invalid configmap specified")
+	}
+	initialConfig, err := (*configSync).Once()
+	if err != nil {
+		return err
+	} else {
+		updateFunc(initialConfig)
+	}
+	go periodicSync((*configSync).Periodic())
 	return nil
 }

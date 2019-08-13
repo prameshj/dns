@@ -1,14 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
-	"flag"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/dns/pkg/dns/config"
 
 	"github.com/coredns/coredns/coremain"
 	_ "github.com/coredns/coredns/plugin/bind"
@@ -37,6 +39,8 @@ type configParams struct {
 	interfaceName        string        // Name of the interface to be created
 	interval             time.Duration // specifies how often to run iptables rules check
 	exitChan             chan bool     // Channel to terminate background goroutines
+	confFile             string
+	cmPath               string
 }
 
 type iptablesRule struct {
@@ -50,10 +54,11 @@ type cacheApp struct {
 	iptables      utiliptables.Interface
 	iptablesRules []iptablesRule
 	params        configParams
+	dnsConfig     *config.DNSConfig
 	netifHandle   *netif.NetifManager
 }
 
-var cache = cacheApp{params: configParams{localPort: "53"}}
+var cache = cacheApp{params: configParams{localPort: "53", cmPath: "/etc/kube-dns", confFile: "/etc/coredns/Corefile"}, dnsConfig: config.NewDNSConfig()}
 
 func isLockedErr(err error) bool {
 	return strings.Contains(err.Error(), "holding the xtables lock")
@@ -80,6 +85,9 @@ func (c *cacheApp) Init() {
 		clog.Fatalf("Failed to setup - %s, Exiting", err)
 	}
 	initMetrics(c.params.metricsListenAddress)
+	// write the initial config file
+	c.updateConfig(&config.Config{UpstreamNameservers: []string{"/etc/resolv.conf"}})
+	c.initConfigMapSync()
 }
 
 func init() {
@@ -112,6 +120,11 @@ func (c *cacheApp) initIptables() {
 				"--sport", c.params.localPort, "-j", "ACCEPT"}},
 			{utiliptables.TableFilter, utiliptables.ChainOutput, []string{"-p", "udp", "-s", localIP,
 				"--sport", c.params.localPort, "-j", "ACCEPT"}},
+			// Skip connection tracking for requests to nodelocalDNS that are locally generated, example - by hostNetwork pods
+			{utiliptables.Table("raw"), utiliptables.ChainOutput, []string{"-p", "tcp", "-d", localIP,
+				"--dport", c.params.localPort, "-j", "NOTRACK"}},
+			{utiliptables.Table("raw"), utiliptables.ChainOutput, []string{"-p", "udp", "-d", localIP,
+				"--dport", c.params.localPort, "-j", "NOTRACK"}},
 		}...)
 	}
 	c.iptables = newIPTables()
@@ -192,7 +205,13 @@ func (c *cacheApp) parseAndValidateFlags() error {
 		return fmt.Errorf("Failed to lookup \"dns.port\" parameter")
 	} else {
 		c.params.localPort = f.Value.String()
+		clog.Infof("DNS.PORT flag value is %+v", f)
 	}
+	if f := flag.Lookup("conf"); f != nil {
+		c.params.confFile = f.Value.String()
+		clog.Infof("CONF flag value is %+v", f)
+	}
+
 	if _, err := strconv.Atoi(c.params.localPort); err != nil {
 		return fmt.Errorf("Invalid port specified - %q", c.params.localPort)
 	}

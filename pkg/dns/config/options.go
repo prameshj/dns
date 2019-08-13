@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Package options contains flags for initializing a proxy.
-package options
+package config
 
 import (
 	"fmt"
@@ -23,55 +23,11 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/spf13/pflag"
-
 	"k8s.io/apimachinery/pkg/util/validation"
 	fed "k8s.io/dns/pkg/dns/federation"
-	"k8s.io/kubernetes/pkg/api"
 )
-
-type KubeDNSConfig struct {
-	ClusterDomain      string
-	KubeConfigFile     string
-	KubeMasterURL      string
-	InitialSyncTimeout time.Duration
-
-	HealthzPort    int
-	DNSBindAddress string
-	DNSPort        int
-
-	Federations map[string]string
-
-	ConfigMapNs string
-	ConfigMap   string
-
-	ConfigDir    string
-	ConfigPeriod time.Duration
-
-	NameServers string
-}
-
-func NewKubeDNSConfig() *KubeDNSConfig {
-	return &KubeDNSConfig{
-		ClusterDomain:      "cluster.local.",
-		HealthzPort:        8081,
-		DNSBindAddress:     "0.0.0.0",
-		DNSPort:            53,
-		InitialSyncTimeout: 60 * time.Second,
-
-		Federations: make(map[string]string),
-
-		ConfigMapNs: api.NamespaceSystem,
-		ConfigMap:   "", // default to using command line flags
-
-		ConfigPeriod: 10 * time.Second,
-		ConfigDir:    "",
-
-		NameServers: "",
-	}
-}
 
 type clusterDomainVar struct {
 	val *string
@@ -144,7 +100,11 @@ func (fv federationsVar) Type() string {
 	return "[]string"
 }
 
-func (s *KubeDNSConfig) AddFlags(fs *pflag.FlagSet) {
+func NewKubeDNSConfig() *DNSConfig {
+	return NewDNSConfig()
+}
+
+func (s *DNSConfig) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(clusterDomainVar{&s.ClusterDomain}, "domain",
 		"domain under which to create names")
 

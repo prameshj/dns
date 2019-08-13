@@ -24,7 +24,7 @@ import (
 
 	"k8s.io/apiserver/pkg/util/flag"
 	"k8s.io/dns/cmd/kube-dns/app"
-	"k8s.io/dns/cmd/kube-dns/app/options"
+	dnsconfig "k8s.io/dns/pkg/dns/config"
 	"k8s.io/dns/pkg/version"
 	"k8s.io/kubernetes/pkg/util/logs"
 
@@ -33,7 +33,7 @@ import (
 )
 
 func main() {
-	config := options.NewKubeDNSConfig()
+	config := dnsconfig.NewKubeDNSConfig()
 	config.AddFlags(pflag.CommandLine)
 
 	flag.InitFlags()

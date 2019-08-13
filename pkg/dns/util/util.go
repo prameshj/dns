@@ -20,11 +20,16 @@ import (
 	"fmt"
 	"hash/fnv"
 	"net"
+	"runtime"
 	"strconv"
 	"strings"
 
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/dns/pkg/version"
+
 	"github.com/golang/glog"
 	"github.com/skynetservices/skydns/msg"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -108,4 +113,20 @@ func ValidateNameserverIpAndPort(nameServer string) (string, string, error) {
 		return "", "", fmt.Errorf("bad port number: %q", port)
 	}
 	return host, port, nil
+}
+
+func GetDefaultKubeClient(appName string) (kubernetes.Interface, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use protobufs for communication with apiserver.
+	config.ContentType = "application/vnd.kubernetes.protobuf"
+	config.UserAgent = UserAgent(appName)
+	return kubernetes.NewForConfig(config)
+}
+
+func UserAgent(appName string) string {
+	return fmt.Sprintf("%s/%s (%s/%s)", appName, version.VERSION, runtime.GOOS, runtime.GOARCH)
 }

@@ -21,23 +21,22 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
-	"strings"
 	"syscall"
+
+	"k8s.io/dns/pkg/dns/config"
+	dnsconfig "k8s.io/dns/pkg/dns/config"
+	"k8s.io/dns/pkg/dns/util"
 
 	"github.com/golang/glog"
 	"github.com/skynetservices/skydns/metrics"
 	"github.com/skynetservices/skydns/server"
 	"github.com/spf13/pflag"
 
-	"k8s.io/dns/cmd/kube-dns/app/options"
 	"k8s.io/dns/pkg/dns"
-	dnsconfig "k8s.io/dns/pkg/dns/config"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/dns/pkg/version"
 )
 
 type KubeDNSServer struct {
@@ -50,34 +49,12 @@ type KubeDNSServer struct {
 	kd             *dns.KubeDNS
 }
 
-func NewKubeDNSServerDefault(config *options.KubeDNSConfig) *KubeDNSServer {
+func NewKubeDNSServerDefault(config *dnsconfig.DNSConfig) *KubeDNSServer {
 	kubeClient, err := newKubeClient(config)
 	if err != nil {
 		glog.Fatalf("Failed to create a kubernetes client: %v", err)
 	}
-
-	var configSync dnsconfig.Sync
-	switch {
-	case config.ConfigMap != "" && config.ConfigDir != "":
-		glog.Fatal("Cannot use both ConfigMap and ConfigDir")
-
-	case config.ConfigMap != "":
-		glog.V(0).Infof("Using configuration read from ConfigMap: %v:%v", config.ConfigMapNs, config.ConfigMap)
-		configSync = dnsconfig.NewConfigMapSync(kubeClient, config.ConfigMapNs, config.ConfigMap)
-
-	case config.ConfigDir != "":
-		glog.V(0).Infof("Using configuration read from directory: %v with period %v", config.ConfigDir, config.ConfigPeriod)
-		configSync = dnsconfig.NewFileSync(config.ConfigDir, config.ConfigPeriod)
-
-	default:
-		glog.V(0).Infof("ConfigMap and ConfigDir not configured, using values from command line flags")
-		conf := dnsconfig.Config{Federations: config.Federations}
-		if len(config.NameServers) > 0 {
-			conf.UpstreamNameservers = strings.Split(config.NameServers, ",")
-		}
-		configSync = dnsconfig.NewNopSync(&conf)
-	}
-
+	configSync := dnsconfig.NewConfigSync(kubeClient, config)
 	return &KubeDNSServer{
 		domain:         config.ClusterDomain,
 		healthzPort:    config.HealthzPort,
@@ -88,7 +65,7 @@ func NewKubeDNSServerDefault(config *options.KubeDNSConfig) *KubeDNSServer {
 	}
 }
 
-func newKubeClient(dnsConfig *options.KubeDNSConfig) (kubernetes.Interface, error) {
+func newKubeClient(dnsConfig *config.DNSConfig) (kubernetes.Interface, error) {
 	var config *rest.Config
 	var err error
 
@@ -107,13 +84,9 @@ func newKubeClient(dnsConfig *options.KubeDNSConfig) (kubernetes.Interface, erro
 	}
 	// Use protobufs for communication with apiserver.
 	config.ContentType = "application/vnd.kubernetes.protobuf"
-	config.UserAgent = userAgent()
+	config.UserAgent = util.UserAgent("kube-dns")
 
 	return kubernetes.NewForConfig(config)
-}
-
-func userAgent() string {
-	return fmt.Sprintf("kube-dns/%s (%s/%s)", version.VERSION, runtime.GOOS, runtime.GOARCH)
 }
 
 func (server *KubeDNSServer) Run() {
