@@ -17,6 +17,7 @@ limitations under the License.
 package sidecar
 
 import (
+	"k8s.io/klog"
 	"time"
 
 	"github.com/golang/glog"
@@ -79,8 +80,13 @@ func exportMetrics(metrics *dnsmasq.Metrics) {
 		// previous to get the proper value. This is needed because the
 		// Counter API does not allow us to set the counter to a value.
 		previousValue := countersCache[key]
-		delta := float64((*metrics)[key]) - previousValue
-		newValue := previousValue + delta
+		newValue := float64((*metrics)[key])
+		delta := newValue - previousValue
+		if delta < 0 {
+			klog.Warningf("Got metric value %v for key %s, previous value was %v, Ignoring new value as it is smaller",
+			newValue, key, previousValue)
+			return
+		}
 		// Update cache to new value.
 		countersCache[key] = newValue
 		counters[key].Add(delta)
