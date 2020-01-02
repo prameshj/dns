@@ -907,6 +907,14 @@
   version = "v3.0.0"
 
 [[projects]]
+  digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
+  name = "k8s.io/klog"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2ca9ad30301bf30a8a6e0fa2110db6b8df699a91"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:4db4c9969c2c4492d64f8a8fd4a5899b06a65a1131a670158218759bdf8f5b68"
   name = "k8s.io/kubernetes"
   packages = [
@@ -1001,6 +1009,7 @@
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/clock",
+    "k8s.io/klog",
     "k8s.io/kubernetes/pkg/api",
     "k8s.io/kubernetes/pkg/client/metrics/prometheus",
     "k8s.io/kubernetes/pkg/util/dbus",
