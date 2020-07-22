@@ -128,9 +128,9 @@ ifeq ($(ARCH),amd64)
 		$(COMPILE_IMAGE)              \
 		/bin/sh -c                    \
 		"apt-get update                           \
-			&& apt-get -y install build-essential libcap-dev \
+			&& apt-get -y install build-essential libcap-dev nettle-dev gettext libdbus-1-dev libidn11-dev libnetfilter-conntrack-dev \
 			&& cd /build/$(DNSMASQ_VERSION)     \
-			&& make -j                          \
+			&& make COPTS=-DHAVE_DNSSEC \
 			&& cp src/dnsmasq /build/docker/dnsmasq" $(VERBOSE_OUTPUT)
 else
 	@cd $(OUTPUT_DIR)/docker                                                 \
